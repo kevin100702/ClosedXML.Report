@@ -91,7 +91,7 @@ namespace ClosedXML.Report.Options
             // sort range
             base.Execute(context);
 
-            Process(context.Range, fields, summaryAbove, funcs.Select(x => x.GetFunc()).ToArray(), DisableGrandTotal);
+            Process(context, fields, summaryAbove, funcs, DisableGrandTotal);
 
             foreach (var tag in fields.Cast<OptionTag>().Union(funcs))
             {
@@ -101,8 +101,9 @@ namespace ClosedXML.Report.Options
 
         private bool DisableGrandTotal => List.HasTag("disablegrandtotal") || !List.GetAll<SummaryFuncTag>().Any();
 
-        private void Process(IXLRange root, GroupTag[] groups, bool summaryAbove, SubtotalSummaryFunc[] funcs, bool disableGrandTotal)
+        private void Process(ProcessingContext context, GroupTag[] groups, bool summaryAbove, SummaryFuncTag[] summaries , bool disableGrandTotal)
         {
+            var root = context.Range;
             var groupRow = root.LastRow();
             //   DoGroups
 
@@ -114,13 +115,13 @@ namespace ClosedXML.Report.Options
 
             var r = root.Offset(0, 0, rows, columns);
 
-            using (var subtotal = new Subtotal(r, summaryAbove))
+            using (var subtotal = new Subtotal(r, summaryAbove, groups))
             {
                 if (TotalLabel != null) subtotal.TotalLabel = TotalLabel;
                 if (GrandLabel != null) subtotal.GrandLabel = GrandLabel;
                 if (!disableGrandTotal)
                 {
-                    var total = subtotal.AddGrandTotal(funcs);
+                    var total = subtotal.AddGrandTotal(summaries);
                     total.SummaryRow.Cell(2).Value = total.SummaryRow.Cell(1).Value;
                     total.SummaryRow.Cell(1).Value = null;
                     level++;
@@ -132,10 +133,10 @@ namespace ClosedXML.Report.Options
                     if (!string.IsNullOrEmpty(g.LabelFormat))
                         labFormat = title => string.Format(LabelFormat, title);
 
-                    if (g.MergeLabels == MergeMode.Merge2 && funcs.Length == 0)
+                    if (g.MergeLabels == MergeMode.Merge2 && summaries.Length == 0)
                         subtotal.ScanForGroups(g.Column);
                     else
-                        subtotal.GroupBy(g.Column, g.DisableSubtotals ? new SubtotalSummaryFunc[0] : funcs, g.PageBreaks, labFormat);
+                        subtotal.GroupBy(g.Column, g.DisableSubtotals ? new SummaryFuncTag[0] : summaries, g.PageBreaks, labFormat);
 
                     g.Level = ++level;
                 }
@@ -179,7 +180,7 @@ namespace ClosedXML.Report.Options
 
             if (subGroup.SummaryRow != null)
             {
-                foreach (var cell in groupRow.Cells(c => c.HasFormula))
+                foreach (var cell in groupRow.Cells(c => c.HasFormula && !(c.GetCellText()?.Contains("<<sum>>")??false)))
                 {
                     subGroup.SummaryRow.Cell(cell.Address.ColumnNumber - groupRow.RangeAddress.FirstAddress.ColumnNumber + 1).Value = cell;
                 }
