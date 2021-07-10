@@ -208,7 +208,7 @@ namespace ClosedXML.Report
                     newMrg.Merge(false);
                 }
 
-                tags.Execute(new ProcessingContext(newRowRng, items[i]));
+                tags.Execute(new ProcessingContext(newRowRng, items[i], evaluator));
             }
 
             // Render options row
@@ -234,7 +234,11 @@ namespace ClosedXML.Report
             }
 
             if (_isSubrange)
-                _rangeTags.Execute(new ProcessingContext(resultRange, new DataSource(items)));
+            {
+                _rangeTags.Execute(new ProcessingContext(resultRange, new DataSource(items), evaluator));
+                // if the range was increased by processing tags (for example, Group), move the buffer to the last cell
+                _buff.SetPrevCellToLastUsed(); 
+            }
         }
 
         private void RenderCell(FormulaEvaluator evaluator, TemplateCell cell, params Parameter[] pars)
@@ -320,7 +324,7 @@ namespace ClosedXML.Report
             // the child template to which the cell belongs
             var xlCell = _rowRange.Cell(cell.Row, cell.Column);
             var ownRng = _subranges.First(r => r._cells.Any(c => c.CellType != TemplateCellType.None && c.XLCell != null && Equals(c.XLCell.Address, xlCell.Address)));
-            var formula = "{{" + ownRng.Source.ReplaceLast("_", ".") + "}}";
+            var formula = ownRng.Source.ReplaceLast("_", ".");
 
             if (evaluator.Evaluate(formula, new Parameter(Name, item)) is IEnumerable value)
             {
@@ -340,9 +344,12 @@ namespace ClosedXML.Report
                 }
                 else
                 {
-                    row += ownRng._rowCnt - 1;
-                    while (_cells[iCell].Row <= row+1)
+                    // move current template cell to next (skip subrange)
+                    row += ownRng._rowCnt+1;
+                    while (_cells[iCell].Row <= row-1)
                         iCell++;
+
+                    iCell--; // roll back. After it became clear that it was too much, we must go back.
 
                     int shiftLen = ownRng._rowCnt * (valArr.Length - 1);
                     tags.Where(tag => tag.Cell.Row > cell.Row)
@@ -384,7 +391,7 @@ namespace ClosedXML.Report
                     newMrg.Merge(false);
                 }
 
-                tags.Execute(new ProcessingContext(newClmnRng, items[i]));
+                tags.Execute(new ProcessingContext(newClmnRng, items[i], evaluator));
 
                 if (_rowCnt > 1)
                     _buff.NewColumn();
@@ -442,7 +449,7 @@ namespace ClosedXML.Report
 
         public void RangeTagsApply(IXLRange range, object[] items)
         {
-            _rangeTags.Execute(new ProcessingContext(range, new DataSource(items)));
+            _rangeTags.Execute(new ProcessingContext(range, new DataSource(items), _evaluator));
         }
     }
 }

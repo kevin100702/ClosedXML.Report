@@ -1,6 +1,8 @@
 ﻿using ClosedXML.Report.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
+using System.Linq.Dynamic.Core.CustomTypeProviders;
 using System.Linq.Dynamic.Core.Exceptions;
 using System.Linq.Expressions;
 using FluentAssertions;
@@ -97,11 +99,99 @@ namespace ClosedXML.Report.Tests
             eval.Evaluate(@"{{np(b.Manager.Name, null)}}").Should().BeNull();
         }
 
+        [Fact]
+        public void EvalDictionaryParams()
+        {
+            Parameter CreateDicParameter(string name) => new Parameter("item", new Dictionary<string, object>
+                {{"Name", new Dictionary<string, object> {{"FirstName", name }}}});
+
+            var eval = new FormulaEvaluator();
+            eval.Evaluate("{{item.Name.FirstName}}", CreateDicParameter("Julio")).Should().Be("Julio");
+            eval.Evaluate("{{item.Name.FirstName}}", CreateDicParameter("John")).Should().Be("John");
+        }
+
+        [Fact]
+        public void EvalDictionaryParams2()
+        {
+            object CreateDicParameter(string name) => new Dictionary<string, object>
+                {{"Name", new Dictionary<string, object> {{"FirstName", name }}}};
+
+            var config = new ParsingConfig()
+            {
+                CustomTypeProvider = new DefaultDynamicLinqCustomTypeProvider()
+            };
+            var parType = new Dictionary<string, object>().GetType();
+            var lambda = DynamicExpressionParser.ParseLambda(config, new [] {Expression.Parameter(parType, "item")}, typeof(object), "item.Name.FirstName").Compile();
+            lambda.DynamicInvoke(CreateDicParameter("Julio")).Should().Be("Julio");
+            lambda.DynamicInvoke(CreateDicParameter("John")).Should().Be("John");
+        }
+
+        [Fact]
+        public void UsingDynamicLinqTypeTest()
+        {
+            var eval = new FormulaEvaluator();
+            eval.AddVariable("a", "1");
+            eval.Evaluate("{{EvaluateUtils.ParseAsInt(a).IncrementMe()}}").Should().Be(2);
+        }
+
+        [Fact]
+        public void EvalMixedArray()
+        {
+            var mixed = new object[] {
+                "string",
+                1,
+                0.1,
+                System.DateTime.Today,
+            };
+
+            var eval = new FormulaEvaluator();
+            eval.AddVariable("mixed", mixed);
+            eval.Evaluate("{{mixed.Count()}}").Should().Be(4);
+            foreach (var item in mixed)
+            {
+                eval.Evaluate("{{item}}", new Parameter("item", item));
+            }
+        }
+
+        [Fact]
+        public void UsingLambdaExpressionsIssue212()
+        {
+            var customers = new object[10000];
+            for (int i = 0; i < customers.Length; i++)
+            {
+                customers[i] = new Customer { Id = i, Name = "Customer" + i };
+            }
+
+            var eval = new FormulaEvaluator();
+            eval.AddVariable("items", customers);
+            eval.Evaluate("{{items.Count(c => c.Id == 9999)}}").Should().Be(1);
+            eval.Evaluate("{{items.Select(i => i.Name).Skip(1000).First()}}").Should().Be("Customer1000");
+        }
+
         class Customer
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public Customer Manager { get; set; }
+        }
+    }
+
+    [DynamicLinqType]
+    public static class EvaluateUtils
+    {
+        public static int ParseAsInt(string value)
+        {
+            if (value == null)
+            {
+                return 0;
+            }
+
+            return int.Parse(value);
+        }
+
+        public static int IncrementMe(this int values)
+        {
+            return values + 1;
         }
     }
 }
