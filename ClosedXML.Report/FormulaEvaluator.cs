@@ -2,10 +2,12 @@
 using DocumentFormat.OpenXml.Bibliography;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ClosedXML.Report
@@ -53,7 +55,27 @@ namespace ClosedXML.Report
 
         public void AddVariable(string name, object value)
         {
-            _variables[name] = value;
+            if (value != null && !value.GetType().IsGenericType && value is IEnumerable enumerable)
+            {
+                var itemType = enumerable.GetItemType();
+                var newEnumerable = EnumerableCastTo(enumerable, itemType);
+                _variables[name] = newEnumerable;
+            }
+            else
+                _variables[name] = value;
+        }
+
+        private IEnumerable EnumerableCastTo(IEnumerable enumerable, Type itemType)
+        {
+            ParameterExpression source = Expression.Parameter(typeof(IEnumerable));
+
+            MethodInfo method = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast), BindingFlags.Public | BindingFlags.Static);
+            MethodInfo castGenericMethod = method.MakeGenericMethod(itemType);
+            var castExpr = Expression.Call(null, castGenericMethod, source);
+
+            var lambda = Expression.Lambda<Func<IEnumerable, IEnumerable>>(castExpr, source);
+
+            return lambda.Compile().Invoke(enumerable);
         }
 
         private string ObjToString(object val)
@@ -85,7 +107,8 @@ namespace ClosedXML.Report
 
         internal Delegate ParseExpression(string formula, ParameterExpression[] parameters)
         {
-            if (!_lambdaCache.TryGetValue(formula, out var lambda))
+            var cacheKey = GetCacheKey(formula, parameters);
+            if (!_lambdaCache.TryGetValue(cacheKey, out var lambda))
             {
                 try
                 {
@@ -96,9 +119,14 @@ namespace ClosedXML.Report
                     return null;
                 }
 
-                _lambdaCache.Add(formula, lambda);
+                _lambdaCache.Add(cacheKey, lambda);
             }
             return lambda;
+        }
+
+        private string GetCacheKey(string formula, ParameterExpression[] parameters)
+        {
+            return formula + string.Join("+", parameters.Select(x => x.Type.Name));
         }
 
         private object Eval(string expression, Parameter[] pars)
