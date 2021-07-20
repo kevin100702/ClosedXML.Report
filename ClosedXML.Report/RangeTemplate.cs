@@ -48,13 +48,13 @@ namespace ClosedXML.Report
             Name = name;
             Source = name;
             var rangeName = name + "_tpl";
-            if (wb.NamedRanges.TryGetValue(rangeName, out var namedRange))
+            if (range.Worksheet.NamedRanges.TryGetValue(rangeName, out var namedRange) || wb.NamedRanges.TryGetValue(rangeName, out namedRange))
             {
                 namedRange.Add(range);
             }
             else
             {
-                wb.NamedRanges.Add(rangeName, range);
+                range.Worksheet.NamedRanges.Add(rangeName, range);
             }
 
             _evaluator = new FormulaEvaluator();
@@ -175,7 +175,7 @@ namespace ClosedXML.Report
                 IXLAddress rowEnd = null;
                 int row = 1;
                 var tags = _tags.CopyTo(_rowRange);
-                var renderdSubranges = new List<string>();
+                var renderedSubranges = new List<string>();
 
                 // render row cells
                 for (var iCell = 0; iCell < _cells.Count; iCell++)
@@ -188,10 +188,10 @@ namespace ClosedXML.Report
                     {
                         var xlCell = _rowRange.Cell(cell.Row, cell.Column);
                         var ownRng = _subranges.First(r => r._cells.Any(c => c.CellType != TemplateCellType.None && c.XLCell != null && Equals(c.XLCell.Address, xlCell.Address)));
-                        if (!renderdSubranges.Contains(ownRng.Name))
+                        if (!renderedSubranges.Contains(ownRng.Name))
                         {
                             RenderSubrange(ownRng, items[i], evaluator, cell, tags, ref iCell, ref row);
-                            renderdSubranges.Add(ownRng.Name);
+                            renderedSubranges.Add(ownRng.Name);
                         }
                     }
                     else if (cell.CellType == TemplateCellType.NewRow)
@@ -325,7 +325,8 @@ namespace ClosedXML.Report
             RenderCell(evaluator, cell, new Parameter("item", items[i]), new Parameter("index", i));
         }
 
-        private void RenderSubrange(RangeTemplate ownRng, object item, FormulaEvaluator evaluator, TemplateCell cell, TagsList tags, ref int iCell, ref int row)
+        private void RenderSubrange(RangeTemplate ownRng, object item, FormulaEvaluator evaluator, TemplateCell cell,
+            TagsList tags, ref int iCell, ref int row)
         {
             var start = _buff.NextAddress;
             // the child template to which the cell belongs

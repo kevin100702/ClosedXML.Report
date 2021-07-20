@@ -1,7 +1,6 @@
 ﻿using ClosedXML.Excel;
 using ClosedXML.Report.Excel;
 using ClosedXML.Report.Options;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,6 +8,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 namespace ClosedXML.Report
 {
@@ -108,9 +108,9 @@ namespace ClosedXML.Report
             {
                 var type = value.GetType();
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance).Where(f => f.IsPublic)
-                    .Select(f => new { f.Name, val = f.GetValue(value), type = f.FieldType })
+                    .Select(f => new {f.Name, val = f.GetValue(value), type = f.FieldType})
                     .Concat(type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(f => f.CanRead)
-                        .Select(f => new { f.Name, val = f.GetValue(value, new object[] { }), type = f.PropertyType }));
+                        .Select(f => new {f.Name, val = f.GetValue(value, new object[] { }), type = f.PropertyType}));
 
                 foreach (var field in fields)
                 {
@@ -189,6 +189,7 @@ namespace ClosedXML.Report
                 }
             }
         }
+
 
 
         public void SaveAs(string file)

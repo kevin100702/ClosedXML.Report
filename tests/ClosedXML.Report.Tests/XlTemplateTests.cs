@@ -358,7 +358,7 @@ namespace ClosedXML.Report.Tests
         {
             string[] GetRowData(IXLWorksheet sheet, int idx, int itemCnt, int offset)
             {
-                var clmNumber = (char)('a' + itemCnt * 2);
+                var clmNumber = (char) ('a' + itemCnt * 2);
                 var row = idx * 3 + offset;
                 return sheet.Range($"B{row}:{clmNumber}{row}").Cells().Select(x => x.GetString()).ToArray();
             }
@@ -378,14 +378,14 @@ namespace ClosedXML.Report.Tests
                         for (int j = 0; j < itemCnt; j += 2)
                         {
                             header[j].Should().Be("Name");
-                            header[j + 1].Should().Be("Quantity");
+                            header[j+1].Should().Be("Quantity");
                         }
                         var data = GetRowData(sheet, i, itemCnt, 3);
                         data.Length.Should().Be(itemCnt * 2);
                         for (int j = 0; j < itemCnt; j++)
                         {
-                            data[j * 2].Should().Be(testData[i].ProductsWithQuantities[j].ProductName);
-                            data[j * 2 + 1].Should().Be(testData[i].ProductsWithQuantities[j].Quantity.ToString());
+                            data[j*2].Should().Be(testData[i].ProductsWithQuantities[j].ProductName);
+                            data[j*2+1].Should().Be(testData[i].ProductsWithQuantities[j].Quantity.ToString());
                         }
                     }
                 });

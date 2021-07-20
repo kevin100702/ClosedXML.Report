@@ -159,7 +159,7 @@ namespace ClosedXML.Report.Tests
             var customers = new object[10000];
             for (int i = 0; i < customers.Length; i++)
             {
-                customers[i] = new Customer { Id = i, Name = "Customer" + i };
+                customers[i] = new Customer { Id = i, Name = "Customer"+i };
             }
 
             var eval = new FormulaEvaluator();

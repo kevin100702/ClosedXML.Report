@@ -69,9 +69,9 @@ namespace ClosedXML.Report.Tests
                 wb =>
                 {
                     var worksheet = wb.Worksheet(1);
-                    var expectedOrder = testEntities.OrderBy(x => x.Address.City).ThenBy(x => x.Age).ToArray();
-                    worksheet.Range("D5:D10").Cells().Select(x => x.GetValue<int>()).ToArray().Should().ContainInOrder(expectedOrder.Select(x => x.Age));
-                    worksheet.Range("E5:E10").Cells().Select(x => x.GetString()).ToArray().Should().ContainInOrder(expectedOrder.Select(x => x.Address.City));
+                    var expectedOrder = testEntities.OrderBy(x=>x.Address.City).ThenBy(x=>x.Age).ToArray();
+                    worksheet.Range("D5:D10").Cells().Select(x=>x.GetValue<int>()).ToArray().Should().ContainInOrder(expectedOrder.Select(x => x.Age));
+                    worksheet.Range("E5:E10").Cells().Select(x=>x.GetString()).ToArray().Should().ContainInOrder(expectedOrder.Select(x => x.Address.City));
                 });
         }
 

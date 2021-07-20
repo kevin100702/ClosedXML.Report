@@ -22,12 +22,12 @@ namespace ClosedXML.Report.Tests.TestModels
             var products = new[]
             {
                 "Brioche", "Tart taten", "Apple pie", "Creamy croissants", "Toast with cream", "Scramble croissant",
-                "Beunier donuts", "Profiteroles with Mascarpone", "Creme de parisien", "Chocolate Fondant", "Quiche with bacon",
+                "Beunier donuts", "Profiteroles with Mascarpone", "Creme de parisien", "Chocolate Fondant", "Quiche with bacon", 
             };
 
             var orderItemFaker = new Faker<OrderItem>()
-               .RuleFor(x => x.ProductName, f => f.PickRandom(products))
-               .RuleFor(x => x.Quantity, f => f.Random.Number(1, 50));
+                .RuleFor(x => x.ProductName, f => f.PickRandom(products))
+                .RuleFor(x => x.Quantity, f => f.Random.Number(1, 50));
 
             var orderFaker = new Faker<TestOrder>()
                 .RuleFor(x => x.OrderNumber, f => f.Random.Number(100000, 999999).ToString())
@@ -53,7 +53,6 @@ namespace ClosedXML.Report.Tests.TestModels
         public decimal Quantity { get; set; }
     }
 
-
     public class TestEntity
     {
         public string Name { get; set; }
@@ -61,6 +60,7 @@ namespace ClosedXML.Report.Tests.TestModels
         public int Age { get; set; }
         public int[] Hours { get; set; }
         public Address Address { get; set; }
+
         public TestEntity()
         {
         }
@@ -75,6 +75,7 @@ namespace ClosedXML.Report.Tests.TestModels
 
         public static IEnumerable<TestEntity> GetTestData(int rowCount)
         {
+            //var roles = new[] { "Developer", "Analyst", "Manager", "Actor", "Producer" };
             var addressFaker = new Faker<Address>()
                 .RuleFor(o => o.Country, f => f.Address.Country())
                 .RuleFor(o => o.City, f => f.Address.City())
@@ -86,7 +87,7 @@ namespace ClosedXML.Report.Tests.TestModels
                 .RuleFor(o => o.Role, f => f.Name.JobTitle())
                 .RuleFor(o => o.Age, f => f.Random.Number(20, 70))
                 .RuleFor(o => o.Address, () => addressFaker)
-                .RuleFor(o => o.Hours, f => new[] { f.Random.Number(2, 14), f.Random.Number(2, 14), f.Random.Number(2, 14) });
+                .RuleFor(o => o.Hours, f => new []{ f.Random.Number(2, 14), f.Random.Number(2, 14), f.Random.Number(2, 14) });
 
             return testEntity.Generate(rowCount);
         }

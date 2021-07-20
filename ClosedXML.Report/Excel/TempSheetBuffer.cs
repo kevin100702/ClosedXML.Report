@@ -85,7 +85,7 @@ namespace ClosedXML.Report.Excel
         {
             if (_clmn > 1)
                 _clmn--;
-            ChangeAddress(1, _clmn + 1);
+            ChangeAddress(_row + 1, startAddr.ColumnNumber);
             _minRow = _row;
         }
 
@@ -176,7 +176,7 @@ namespace ClosedXML.Report.Excel
             {
                 var rowNumber = Math.Max(_prevrow, _sheet.RowsUsed().LastOrDefault()?.RowNumber() ?? 1);
                 var columnNumber = Math.Max(_prevclmn, _sheet.ColumnsUsed().LastOrDefault()?.ColumnNumber() ?? 1);
-                var lastCell = GetCell(rowNumber, columnNumber);
+                var lastCell = GetCell(rowNumber, columnNumber); //_sheet.Cell(_prevrow, _prevclmn);
                 return lastCell;
             }
         }

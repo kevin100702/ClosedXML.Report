@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace ClosedXML.Report.Utils
 {
@@ -26,6 +26,7 @@ namespace ClosedXML.Report.Utils
             }
             return null;
         }
+
         public static T As<T>(this object obj)
         {
             return (T)obj;
